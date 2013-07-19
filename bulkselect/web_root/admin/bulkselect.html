@@ -1,0 +1,130 @@
+<!-- 
+Bulk Select v0.5
+Tested on PS 7.8 only.
+
+Gorman Christian
+
+Consists of bulkselect.html, bulkselect_lookup.html
+
+Changes in this version:
+- re-wrote to use the handpick form as a workaround to the 1000 term limit. If there is still a max, I haven't been able to reach it.
+- fixed bug if pasted text ends with a ","
+-->
+
+<!DOCTYPE html> 
+<html> 
+<head> 
+	<title>Bulk Selection</title> 
+<!-- Required style sheets: screen.css, and print.css --> 
+	<link href="/images/css/screen.css" rel="stylesheet" media="screen"> 
+	<link href="/images/css/print.css" rel="stylesheet" media="print"> 
+</head> 
+<script type="text/javascript">
+var queuePosition;
+var snList;
+
+function processquery()
+{
+lookupCount = 500;
+
+if ((snList.length - queuePosition) >= lookupCount)
+{
+	currentQuery = snList.slice(queuePosition, (queuePosition + lookupCount));
+	queuePosition = queuePosition + lookupCount;
+}
+else
+{
+	currentQuery = snList.slice(queuePosition, snList.length);
+	queuePosition = snList.length;
+}
+			$j.ajax({
+				url: 'bulkselect_lookup.html',
+				data: "bulk=" + encodeURIComponent(currentQuery.join()),
+                                timeout: 600,  
+				success: function(returned_dcids){
+
+				$j("#selectHandpick select").append(returned_dcids);
+
+				if (queuePosition != snList.length)
+					processquery();
+				else{
+					$j("#loading_div").hide();
+					$j("#handpickform").submit();
+				}
+
+				}});
+
+
+
+}
+
+function  normalizeandbuildquery() {
+
+queuePosition = 0;
+snList = "";
+
+source_text=$j("#bulk_text").val();
+source_text = source_text.replace(/(\s|\r)/g,",");
+source_text = source_text.replace(/,{2,}/g,',');
+
+if (source_text.slice(-1) == ',')
+	source_text = source_text.slice(0,source_text.length-1);
+
+snList = source_text.split(",");
+
+$j("#loading_div").show();
+$j("#bulk_search").hide();
+
+processquery();
+
+}
+</script>
+<body> 
+	~[wc:admin_header_css] 
+    <div id="breadcrumbs"> 
+<a href="/admin/home.html" target="_top">Start Page</a> > 
+		<!-- breadcrumb start -->Bulk Selection<!-- breadcrumb end --> 
+    </div> 
+<!-- start of main menu and content --> 
+	~[wc:admin_navigation_css] 
+<!-- Start of Page --> 
+	<h1>Bulk Selection</h1> 
+<!-- start of content area --> 
+	<div class="box-round"> 
+    <center>
+<p>Paste either tab, comma, or line delimited student numbers into this field to mass select the students.</p>
+<br>
+        <form id = "bulk_form">
+<textarea rows="20" cols="50" id = "bulk_text">
+</textarea>
+        </form><br>
+<input name="bulk_search" id="bulk_search" type="button" value="Select" onclick="normalizeandbuildquery();" />
+</center>
+	</div>
+<div id = "loading_div" style="display: none;"><p style="text-align: center;"><img id="progressindicator" src="/images/busy_blue.gif" /> Building selection....</p></div>
+
+<form action="/admin/studentlist/functions.html" method="POST" id = "handpickform" style="display: none;">
+<div id="selectHandpick">
+<select name="handpick" size="25" multiple>
+
+</select>
+</div>
+<p>
+<input type="radio" name="radiobutton" value="1" checked /> Keep selected students<br />
+<input type="radio" name="radiobutton" value="2" /> Remove selected students
+</p>
+
+	<div class="button-row">
+		<input type="hidden" name="ac" value="handpickstudents">
+		<button type="submit" id="btnFunctions" name="btnFunctions">Functions</button>
+		<button type="submit" id="btnSelections" name="selections">Selections</button>
+	</div>
+</form>
+</div>
+
+<!-- end of content area --> 
+	~[wc:admin_footer_css] 
+<!-- required scripts --> 
+	~[wc:commonscripts] 
+</body> 
+</html>
