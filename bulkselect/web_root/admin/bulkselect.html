@@ -70,12 +70,17 @@ source_text = source_text.replace(/,{2,}/g,',');
 if (source_text.slice(-1) == ',')
 	source_text = source_text.slice(0,source_text.length-1);
 
-snList = source_text.split(",");
+if (/^(\d|,)+$/.test(source_text)){
+	snList = source_text.split(",");
 
-$j("#loading_div").show();
-$j("#bulk_search").hide();
+	$j("#loading_div").show();
+	$j("#bulk_search").hide();
 
-processquery();
+	processquery();
+	}
+else {
+		alert("The pasted text contains invalid characters. Only numbers and delimeters should be present.");
+	}
 
 }
 </script>
