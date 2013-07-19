@@ -1,5 +1,5 @@
 <!-- 
-Bulk Select v0.5
+Bulk Select v0.6
 Tested on PS 7.8 only.
 
 Gorman Christian
@@ -7,8 +7,7 @@ Gorman Christian
 Consists of bulkselect.html, bulkselect_lookup.html
 
 Changes in this version:
-- re-wrote to use the handpick form as a workaround to the 1000 term limit. If there is still a max, I haven't been able to reach it.
-- fixed bug if pasted text ends with a ","
+- switched back from using handpick to buildsel after seeing how it was used in Ken Torgeson's grade report 
 -->
 
 <!DOCTYPE html> 
@@ -22,38 +21,40 @@ Changes in this version:
 <script type="text/javascript">
 var queuePosition;
 var snList;
+var dcidList;
 
 function processquery()
 {
-lookupCount = 500;
 
-if ((snList.length - queuePosition) >= lookupCount)
+
+if ((snList.length - queuePosition) >= 500)
 {
-	currentQuery = snList.slice(queuePosition, (queuePosition + lookupCount));
-	queuePosition = queuePosition + lookupCount;
+	currentQuery = snList.slice(queuePosition, (queuePosition + 500));
+	queuePosition = queuePosition + 500;
 }
 else
 {
 	currentQuery = snList.slice(queuePosition, snList.length);
 	queuePosition = snList.length;
 }
+
 			$j.ajax({
-				url: 'bulkselect_lookup.html',
+				url: '/admin/bulkselect_lookup.html',
 				data: "bulk=" + encodeURIComponent(currentQuery.join()),
                                 timeout: 600,  
 				success: function(returned_dcids){
 
-				$j("#selectHandpick select").append(returned_dcids);
-
+				dcidList = dcidList + returned_dcids;
+				
 				if (queuePosition != snList.length)
 					processquery();
 				else{
 					$j("#loading_div").hide();
-					$j("#handpickform").submit();
-				}
+					$j("#studSelectList").val("buildsel;table=students;list=" + dcidList);
+					$j("#stform").submit();
 
+}
 				}});
-
 
 
 }
@@ -62,6 +63,7 @@ function  normalizeandbuildquery() {
 
 queuePosition = 0;
 snList = "";
+dcidList = "";
 
 source_text=$j("#bulk_text").val();
 source_text = source_text.replace(/(\s|\r)/g,",");
@@ -82,6 +84,7 @@ else {
 		alert("The pasted text contains invalid characters. Only numbers and delimeters should be present.");
 	}
 
+
 }
 </script>
 <body> 
@@ -101,31 +104,17 @@ else {
 <br>
         <form id = "bulk_form">
 <textarea rows="20" cols="50" id = "bulk_text">
-</textarea>
-        </form><br>
-<input name="bulk_search" id="bulk_search" type="button" value="Select" onclick="normalizeandbuildquery();" />
-</center>
-	</div>
-<div id = "loading_div" style="display: none;"><p style="text-align: center;"><img id="progressindicator" src="/images/busy_blue.gif" /> Building selection....</p></div>
+</textarea><br>
+<input name="bulk_search" type="button" value="Select" onclick="normalizeandbuildquery();" />
+        </form>
+<br>
+<div id = "loading_div" style="display: none;"><p style="text-align: center;"><img id="progressindicator" src="/images/busy_blue.gif" /> Loading selection....</p></div>
 
-<form action="/admin/studentlist/functions.html" method="POST" id = "handpickform" style="display: none;">
-<div id="selectHandpick">
-<select name="handpick" size="25" multiple>
-
-</select>
-</div>
-<p>
-<input type="radio" name="radiobutton" value="1" checked /> Keep selected students<br />
-<input type="radio" name="radiobutton" value="2" /> Remove selected students
-</p>
-
-	<div class="button-row">
-		<input type="hidden" name="ac" value="handpickstudents">
-		<button type="submit" id="btnFunctions" name="btnFunctions">Functions</button>
-		<button type="submit" id="btnSelections" name="selections">Selections</button>
-	</div>
+<form id="stform" action="/admin/studentlist/functions.html" method="POST"><input type="hidden" id="studSelectList" name="ac" value="buildsel;table=students;list=">
 </form>
-</div>
+</center>
+
+	</div> 
 
 <!-- end of content area --> 
 	~[wc:admin_footer_css] 
